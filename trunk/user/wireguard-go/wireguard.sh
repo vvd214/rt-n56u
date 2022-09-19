@@ -4,8 +4,10 @@ IFACE="wg0"
 ADDR="10.127.0.1"
 MASK="24"
 WAN="ppp0"
+cfg_file="/etc/storage/wireguard.conf"
 
-cat >"/tmp/${IFACE}.conf" <<S_CONFIG
+if [ ! -f "$cfg_file" ] || [ ! -s "$cfg_file" ] ; then
+	cat > "$cfg_file" <<-\EEE
 [Interface]
 ListenPort = 55551
 PrivateKey = iBgjJQutq3JUpixs8Su25YS4Jd5SDlYLxgaJAvy4rm4=
@@ -30,15 +32,14 @@ AllowedIPs = 10.127.0.5/32
 PublicKey = fgR1hK6+SpX7NHrORj38Coy1/ICTEWsTXn3RwYY4gRw=
 AllowedIPs = 10.127.0.6/32
 
-S_CONFIG
 
-echo ${CONFIG}
+EEE
+fi
+
               (killall wireguard ; sleep 1 ; wireguard wg0  2>/dev/null) && \
-#              (killall wireguard-go ; sleep 3 ; /media/Main/WG/wireguard-go wg0  2>/dev/null) && \
 			(ip link show ${IFACE} 2>/dev/null) && \
-#               (ip link add dev ${IFACE} type wireguard) && \
                (ip addr add ${ADDR}/${MASK} dev ${IFACE}) && \
-               (wg setconf ${IFACE} "/tmp/${IFACE}.conf") && \
+               (wg setconf ${IFACE} "/home/root/wireguard.conf") && \
                (sleep 1) && \
                (ip link set ${IFACE} up)
 
