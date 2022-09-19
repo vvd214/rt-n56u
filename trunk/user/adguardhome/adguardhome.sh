@@ -1,178 +1,118 @@
 #!/bin/sh
 
-change_dns() {
-if [ "$(nvram get adg_redirect)" = 1 ]; then
-sed -i '/no-resolv/d' /etc/storage/dnsmasq/dnsmasq.conf
-sed -i '/server=127.0.0.1/d' /etc/storage/dnsmasq/dnsmasq.conf
-cat >> /etc/storage/dnsmasq/dnsmasq.conf << EOF
-no-resolv
-server=127.0.0.1#5335
-EOF
-/sbin/restart_dhcpd
-logger -t "AdGuardHome" "Add DNS forwarding to port 5335"
-fi
-}
-del_dns() {
-sed -i '/no-resolv/d' /etc/storage/dnsmasq/dnsmasq.conf
-sed -i '/server=127.0.0.1#5335/d' /etc/storage/dnsmasq/dnsmasq.conf
-/sbin/restart_dhcpd
-}
+#######################################################################
+# (1) run process from superuser root (less security)
+# (0) run process from unprivileged user "nobody" (more security)
+SVC_ROOT=1
 
-set_iptable()
-{
-    if [ "$(nvram get adg_redirect)" = 2 ]; then
-	IPS="`ifconfig | grep "inet addr" | grep -v ":127" | grep "Bcast" | awk '{print $2}' | awk -F : '{print $2}'`"
-	for IP in $IPS
-	do
-		iptables -t nat -A PREROUTING -p tcp -d $IP --dport 53 -j REDIRECT --to-ports 5335 >/dev/null 2>&1
-		iptables -t nat -A PREROUTING -p udp -d $IP --dport 53 -j REDIRECT --to-ports 5335 >/dev/null 2>&1
-	done
+# process priority (0-normal, 19-lowest)
+SVC_PRIORITY=5
+#######################################################################
 
-	IPS="`ifconfig | grep "inet6 addr" | grep -v " fe80::" | grep -v " ::1" | grep "Global" | awk '{print $3}'`"
-	for IP in $IPS
-	do
-		ip6tables -t nat -A PREROUTING -p tcp -d $IP --dport 53 -j REDIRECT --to-ports 5335 >/dev/null 2>&1
-		ip6tables -t nat -A PREROUTING -p udp -d $IP --dport 53 -j REDIRECT --to-ports 5335 >/dev/null 2>&1
-	done
-    logger -t "AdGuardHome" "Redirect port 53"
-    fi
-}
-
-clear_iptable()
-{
-	OLD_PORT="5335"
-	IPS="`ifconfig | grep "inet addr" | grep -v ":127" | grep "Bcast" | awk '{print $2}' | awk -F : '{print $2}'`"
-	for IP in $IPS
-	do
-		iptables -t nat -D PREROUTING -p udp -d $IP --dport 53 -j REDIRECT --to-ports $OLD_PORT >/dev/null 2>&1
-		iptables -t nat -D PREROUTING -p tcp -d $IP --dport 53 -j REDIRECT --to-ports $OLD_PORT >/dev/null 2>&1
-	done
-
-	IPS="`ifconfig | grep "inet6 addr" | grep -v " fe80::" | grep -v " ::1" | grep "Global" | awk '{print $3}'`"
-	for IP in $IPS
-	do
-		ip6tables -t nat -D PREROUTING -p udp -d $IP --dport 53 -j REDIRECT --to-ports $OLD_PORT >/dev/null 2>&1
-		ip6tables -t nat -D PREROUTING -p tcp -d $IP --dport 53 -j REDIRECT --to-ports $OLD_PORT >/dev/null 2>&1
-	done
+SVC_NAME="AdGuardHome"
+SVC_PATH="/usr/bin/AdGuardHome"
+WORK_DIR="/tmp/AdGuardHome"
+DIR_CONF="/etc/storage/AdGuardHome.yaml"
+adg_port=3000
 	
-}
+LOG_FILE="syslog"
 
-getconfig(){
-adg_file="/etc/storage/AdGuardHome.yaml"
-if [ ! -f "$adg_file" ] || [ ! -s "$adg_file" ] ; then
-	cat > "$adg_file" <<-\EEE
-bind_host: 0.0.0.0
-bind_port: 3030
-auth_name: admin
-auth_pass: admin
-language: 
-rlimit_nofile: 0
-dns:
-  bind_host: 0.0.0.0
-  port: 5335
-  protection_enabled: true
-  filtering_enabled: true
-  filters_update_interval: 24
-  blocking_mode: nxdomain
-  blocked_response_ttl: 10
-  querylog_enabled: false
-  ratelimit: 20
-  ratelimit_whitelist: []
-  refuse_any: true
-  bootstrap_dns:
-  - 9.9.9.10
-  - 149.112.112.10
-  - 2620:fe::10
-  - 2620:fe::fe:10
-  all_servers: true
-  allowed_clients: []
-  disallowed_clients: []
-  blocked_hosts: []
-  parental_sensitivity: 0
-  parental_enabled: true
-  safesearch_enabled: false
-  safebrowsing_enabled: false
-  resolveraddress: ""
-  upstream_dns:
-  - 9.9.9.10
-  - 149.112.112.10
-  - 2620:fe::10
-  - 2620:fe::fe:10
-tls:
-  enabled: false
-  server_name: ""
-  force_https: false
-  port_https: 443
-  port_dns_over_tls: 853
-  certificate_chain: ""
-  private_key: ""
-filters:
-- enabled: true
-  url: https://adguardteam.github.io/AdGuardSDNSFilter/Filters/filter.txt
-  name: AdGuard DNS filter
-  id: 1
-- enabled: true
-  url: https://adaway.org/hosts.txt
-  name: AdAway Default Blocklist
-  id: 2
-- enabled: true
-  url: https://abpvn.com/android/abpvn.txt
-  name: ABVN
-  id: 1643333073
-- enabled: false
-  url: https://raw.githubusercontent.com/crazy-max/WindowsSpyBlocker/master/data/hosts/spy.txt
-  name: WindowsSpyBlocker - Hosts spy rules
-  id: 1643333518
-user_rules: []
-dhcp:
-  enabled: false
-  interface_name: ""
-  gateway_ip: ""
-  subnet_mask: ""
-  range_start: ""
-  range_end: ""
-  lease_duration: 86400
-  icmp_timeout_msec: 1000
-clients: []
-log_file: ""
-verbose: false
-schema_version: 3
-
-EEE
-	chmod 755 "$adg_file"
-fi
-}
-
-
-
-start_adg(){
-	getconfig
-	change_dns
-	set_iptable
-	logger -t "AdGuardHome" "Run AdGuardHome"
-
-	if [ ! -d /tmp/AdGuardHome ] ; then
-		mkdir -p /tmp/AdGuardHome
+func_start()
+{
+	if [ -n "`pidof AdGuardHome`" ] ; then
+		return 0
 	fi
 
-	eval "/usr/bin/AdGuardHome -c $adg_file -w /tmp/AdGuardHome --no-check-update" &
+	echo -n "Starting $SVC_NAME:."
+	
+	replace_dnsmasq=1
+	
+	if [ $replace_dnsmasq -eq 1 ] ; then
+		if grep -q "^#port=0$" /etc/storage/dnsmasq/dnsmasq.conf; then
+			sed -i '/port=0/s/^#//g' /etc/storage/dnsmasq/dnsmasq.conf
+		else
+			if grep -q "^port=0$" /etc/storage/dnsmasq/dnsmasq.conf; then
+				true
+			else
+				echo "port=0" >> /etc/storage/dnsmasq/dnsmasq.conf
+			fi
+		fi
+		killall dnsmasq
+	fi
 
+	if [ ! -d "${WORK_DIR}" ] ; then
+		mkdir -p "${WORK_DIR}"
+	fi
+
+	if [ $SVC_ROOT -eq 0 ] ; then
+		chmod 777 "${WORK_DIR}"
+		svc_user=" -c nobody"
+	fi
+	lan_ipaddr=`nvram get lan_ipaddr`
+
+	start-stop-daemon -S -b -N $SVC_PRIORITY$svc_user -x $SVC_PATH -- -w "$WORK_DIR" -c "$DIR_CONF" -l "$LOG_FILE" -h "$lan_ipaddr" -p "$adg_port" --no-check-update
+	
+	if [ $? -eq 0 ] ; then
+		echo "[  OK  ]"
+		logger -t "$SVC_NAME" "daemon is started"
+	else
+		echo "[FAILED]"
+	fi
 }
-stop_adg(){
-killall -9 AdGuardHome
-del_dns
-clear_iptable
+
+func_stop()
+{
+	# Make sure not running
+	if [ -z "`pidof AdGuardHome`" ] ; then
+		return 0
+	fi
+	
+	echo -n "Stopping $SVC_NAME:."
+	
+	# stop daemon
+	killall -q AdGuardHome
+	
+	# gracefully wait max 25 seconds while AGH stop
+	i=0
+	while [ -n "`pidof AdGuardHome`" ] && [ $i -le 25 ] ; do
+		echo -n "."
+		i=$(( $i + 1 ))
+		sleep 1
+	done
+	
+	tr_pid=`pidof AdGuardHome`
+	if [ -n "$tr_pid" ] ; then
+		# force kill (hungup?)
+		kill -9 "$tr_pid"
+		sleep 1
+		echo "[KILLED]"
+		logger -t "$SVC_NAME" "Cannot stop: Timeout reached! Force killed."
+	else
+		echo "[  OK  ]"
+	fi
+
+	restart_dnsmasq=1
+	if [ $restart_dnsmasq -eq 1 ] ; then
+		if grep -q "^port=0$" /etc/storage/dnsmasq/dnsmasq.conf; then
+			sed -i '/port=0/s/^/#/g' /etc/storage/dnsmasq/dnsmasq.conf
+		fi
+		killall dnsmasq
+	fi
 }
 
-
-case $1 in
+case "$1" in
 start)
-	start_adg
+	func_start
 	;;
 stop)
-	stop_adg
+	func_stop
+	;;
+restart)
+	func_stop
+	func_start
 	;;
 *)
-	echo "check"
+	echo "Usage: $0 {start|stop|restart}"
+	exit 1
 	;;
 esac
