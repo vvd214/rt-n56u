@@ -120,7 +120,10 @@ dir_y						+= inadyn
 dir_y						+= miniupnpd
 dir_y						+= dnsmasq
 dir_y						+= igmpproxy
+ifneq ($(CONFIG_FIRMWARE_INCLUDE_MSD_LITE),y)
 dir_y						+= udpxy
+endif
+dir_$(CONFIG_FIRMWARE_INCLUDE_MSD_LITE)		+= msd_lite
 dir_y						+= utils
 dir_y						+= lanauth
 dir_y						+= 802.1x
