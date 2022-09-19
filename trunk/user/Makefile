@@ -151,6 +151,10 @@ ifeq ($(CONFIG_FIRMWARE_INCLUDE_WIREGUARD),y)
 dir_y += wireguard-go
 dir_y += wireguard-tools
 endif
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_ADGUARDHOME),y)
+dir_y += adguardhome
+endif
+
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_SMBD36),y)
 dir_$(SAMBA_ENABLED)				+= samba36
 dir_y							+= wsdd2
