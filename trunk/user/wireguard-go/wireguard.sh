@@ -1,5 +1,17 @@
 #!/bin/sh
-sleep 5 ;
+count=0
+while :
+do
+	ping -c 1 -W 1 -q 8.8.8.8 1>/dev/null 2>&1
+	if [ "$?" == "0" ]; then
+		break
+	fi
+	sleep 5
+	count=$((count+1))
+	if [ $count -gt 18 ]; then
+		break
+	fi
+done
 IFACE="wg0"
 ADDR="10.127.0.1"
 MASK="24"
