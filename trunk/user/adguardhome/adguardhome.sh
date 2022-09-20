@@ -44,8 +44,8 @@ dns:
   bootstrap_dns:
   - 8.8.8.8
   - 8.8.4.4
-  - 2001:4860:4860::8888
-  - 2001:4860:4860::8844
+  - https://dns.google/dns-query
+  - tls://dns.google
   all_servers: true
   allowed_clients: []
   disallowed_clients: []
@@ -58,8 +58,6 @@ dns:
   upstream_dns:
   - 8.8.8.8
   - 8.8.4.4
-  - 2001:4860:4860::8888
-  - 2001:4860:4860::8844
 tls:
   enabled: false
   server_name: ""
