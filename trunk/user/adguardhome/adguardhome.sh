@@ -110,11 +110,9 @@ getconfig
 	fi
 	start-stop-daemon -S -b -N $SVC_PRIORITY -x $SVC_PATH -- -w "$WORK_DIR" -c $adg_file -l "$LOG_FILE" --no-check-update
 	logger -t "AdGuardHome" "Start AdGuardHome"
-
 else
 
 sed -i '/no-resolv/d' /etc/storage/dnsmasq/dnsmasq.conf
 sed -i '/server=127.0.0.1#5335/d' /etc/storage/dnsmasq/dnsmasq.conf
-killall -9 AdGuardHome
 fi
 
