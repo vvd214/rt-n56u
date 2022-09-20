@@ -277,10 +277,12 @@ sync && echo 3 > /proc/sys/vm/drop_caches
 # Mount SATA disk
 #mdev -s
 
-# Enable EnableAGH=1
-# Disable EnableAGH=0
-nvram set EnableAGH=0
-/usr/bin/adguardhome.sh
+#AdGuardHome port 3000, config in /etc/storage/AdGuardHome.yaml
+#Enable EnableAGH=1 
+#Disable EnableAGH=0
+
+#nvram set EnableAGH=0
+#/usr/bin/adguardhome.sh
 
 #wing <HOST:443> <PASS>
 #wing 192.168.1.9:1080
