@@ -42,10 +42,10 @@ dns:
   ratelimit_whitelist: []
   refuse_any: true
   bootstrap_dns:
-  - 9.9.9.10
-  - 149.112.112.10
-  - 2620:fe::10
-  - 2620:fe::fe:10
+  - 8.8.8.8
+  - 8.8.4.4
+  - 2001:4860:4860::8888
+  - 2001:4860:4860::8844
   all_servers: true
   allowed_clients: []
   disallowed_clients: []
@@ -56,10 +56,10 @@ dns:
   safebrowsing_enabled: false
   resolveraddress: ""
   upstream_dns:
-  - 9.9.9.10
-  - 149.112.112.10
-  - 2620:fe::10
-  - 2620:fe::fe:10
+  - 8.8.8.8
+  - 8.8.4.4
+  - 2001:4860:4860::8888
+  - 2001:4860:4860::8844
 tls:
   enabled: false
   server_name: ""
