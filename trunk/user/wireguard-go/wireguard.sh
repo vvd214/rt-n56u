@@ -38,18 +38,14 @@ AllowedIPs = 10.127.0.5/32
 PublicKey = fgR1hK6+SpX7NHrORj38Coy1/ICTEWsTXn3RwYY4gRw=
 AllowedIPs = 10.127.0.6/32
 
-
 EEE
 fi
-
-              (killall wireguard ; sleep 1 ; wireguard wg0  2>/dev/null) && \
-			(ip link show ${IFACE} 2>/dev/null) && \
-               (ip addr add ${ADDR}/${MASK} dev ${IFACE}) && \
-               (wg setconf ${IFACE} "/home/root/wireguard.conf") && \
-               (sleep 1) && \
-               (ip link set ${IFACE} up)
-
-rm -f "/tmp/${IFACE}.conf"
+	(killall wireguard ; sleep 1 ; wireguard wg0  2>/dev/null) && \
+	(ip link show ${IFACE} 2>/dev/null) && \
+	(ip addr add ${ADDR}/${MASK} dev ${IFACE}) && \
+	(wg setconf ${IFACE} $cfg_file) && \
+	(sleep 1) && \
+	(ip link set ${IFACE} up)
 
 ifconfig ${IFACE}
 
