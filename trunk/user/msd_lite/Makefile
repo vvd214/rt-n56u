@@ -10,4 +10,4 @@ clean:
 
 romfs:
 	$(ROMFSINST) -S -p +x $(THISDIR)/msd_lite /usr/bin/msd_lite
-	$(ROMFSINST) -S -p +x $(THISDIR)/msd_lite.conf /etc_ro/msd_lite.conf
+	$(ROMFSINST) $(THISDIR)/msd_lite.conf /etc_ro/msd_lite.conf
