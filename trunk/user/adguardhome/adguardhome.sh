@@ -5,6 +5,20 @@ WORK_DIR="/tmp/AdGuardHome"
 SVC_PATH="/usr/bin/AdGuardHome"
 LOG_FILE="syslog"
 
+count=0
+while :
+do
+	ping -c 1 -W 1 -q 8.8.8.8 1>/dev/null 2>&1
+	if [ "$?" == "0" ]; then
+		break
+	fi
+	sleep 5
+	count=$((count+1))
+	if [ $count -gt 18 ]; then
+		break
+	fi
+done
+
 getconfig(){
 adg_file="/etc/storage/AdGuardHome.yaml"
 if [ ! -f "$adg_file" ] || [ ! -s "$adg_file" ] ; then
