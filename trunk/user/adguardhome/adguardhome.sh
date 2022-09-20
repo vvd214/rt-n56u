@@ -17,7 +17,7 @@ language:
 rlimit_nofile: 0
 dns:
   bind_host: 0.0.0.0
-  port: 5335
+  port: 53
   protection_enabled: true
   filtering_enabled: true
   filters_update_interval: 24
@@ -92,16 +92,18 @@ fi
 }
 
 
-if [ "$(nvram get EnableAGH)" = 1 ]; then
-
-sed -i '/no-resolv/d' /etc/storage/dnsmasq/dnsmasq.conf
-sed -i '/server=127.0.0.1/d' /etc/storage/dnsmasq/dnsmasq.conf
-cat >> /etc/storage/dnsmasq/dnsmasq.conf << EOF
-no-resolv
-server=127.0.0.1#5335
-EOF
-/sbin/restart_dhcpd
-logger -t "AdGuardHome" "Add DNS forwarding to port 5335"
+	if [ "$(nvram get EnableAGH)" = 1 ]; then
+		if grep -q "^#port=0$" /etc/storage/dnsmasq/dnsmasq.conf; then
+			sed -i '/port=0/s/^#//g' /etc/storage/dnsmasq/dnsmasq.conf
+			/sbin/restart_dhcpd
+		else
+			if grep -q "^port=0$" /etc/storage/dnsmasq/dnsmasq.conf; then
+				true
+			else
+				echo "port=0" >> /etc/storage/dnsmasq/dnsmasq.conf
+				/sbin/restart_dhcpd
+			fi
+		fi
 
 getconfig
 
@@ -110,9 +112,15 @@ getconfig
 	fi
 	start-stop-daemon -S -b -N $SVC_PRIORITY -x $SVC_PATH -- -w "$WORK_DIR" -c $adg_file -l "$LOG_FILE" --no-check-update
 	logger -t "AdGuardHome" "Start AdGuardHome"
-else
 
-sed -i '/no-resolv/d' /etc/storage/dnsmasq/dnsmasq.conf
-sed -i '/server=127.0.0.1#5335/d' /etc/storage/dnsmasq/dnsmasq.conf
+else
+			if grep -q "^port=0$" /etc/storage/dnsmasq/dnsmasq.conf; then
+				sed -i '/port=0/s/^/#/g' /etc/storage/dnsmasq/dnsmasq.conf
+				/sbin/restart_dhcpd
+			else
+				true
+			fi
+logger -t "AdGuardHome" "Stop AdGuardHome"
+killall -9 AdGuardHome
 fi
 
