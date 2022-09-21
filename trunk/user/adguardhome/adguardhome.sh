@@ -122,7 +122,7 @@ getconfig
 	if [ ! -d /tmp/AdGuardHome ] ; then
 		mkdir -p /tmp/AdGuardHome
 	fi
-	start-stop-daemon -S -b -N $SVC_PRIORITY -x $SVC_PATH -- -w "$WORK_DIR" -c $adg_file -l "$LOG_FILE" --no-check-update
+	start-stop-daemon -S -b -N $SVC_PRIORITY -x $SVC_PATH -- -w "$WORK_DIR" -c $adg_file --no-check-update
 	logger -t "AdGuardHome" "Start AdGuardHome"
 
 else
