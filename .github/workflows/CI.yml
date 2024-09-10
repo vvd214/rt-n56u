@@ -67,10 +67,11 @@ jobs:
           name: ${{ env.image_name }}
           path: ${{ env.images_dir }}/*.7z
       - name: Upload images to Releases
+        uses: softprops/action-gh-release@master
         if: ${{ github.event_name == 'release' && success() }}
-        uses: svenstaro/upload-release-action@2.9.0
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ${{ env.images_dir }}/*.trx
           tag: ${{ github.ref }}
           overwrite: true
